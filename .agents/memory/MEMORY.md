@@ -1,0 +1,1 @@
+- [Clerk integration](clerk-integration.md) — preserve Replit's host-aware client and proxy wiring for base-path-safe auth.

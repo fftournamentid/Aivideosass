@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: studio
+    description: AI media studio operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [studio]
+      summary: Get studio dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [studio]
+      summary: List projects
+      responses:
+        "200":
+          description: Project list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [studio]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /characters:
+    get:
+      operationId: listCharacters
+      tags: [studio]
+      summary: List character vault entries
+      responses:
+        "200":
+          description: Character list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+    post:
+      operationId: createCharacter
+      tags: [studio]
+      summary: Create a character vault entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterInput"
+      responses:
+        "201":
+          description: Created character
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+  /generations:
+    get:
+      operationId: listGenerations
+      tags: [studio]
+      summary: List generations and media history
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [video, image, audio]
+      responses:
+        "200":
+          description: Generation list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Generation"
+    post:
+      operationId: createGeneration
+      tags: [studio]
+      summary: Enqueue a media generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerationInput"
+      responses:
+        "201":
+          description: Enqueued generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Generation"
+  /generations/{id}/cancel:
+    post:
+      operationId: cancelGeneration
+      tags: [studio]
+      summary: Cancel an active generation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cancelled generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Generation"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +165,117 @@ components:
           type: string
       required:
         - status
+    DashboardSummary:
+      type: object
+      required: [credits, activeGenerations, totalGenerations, projects]
+      properties:
+        credits:
+          type: number
+        activeGenerations:
+          type: number
+        totalGenerations:
+          type: number
+        projects:
+          type: number
+        expiringSoon:
+          type: number
+    Project:
+      type: object
+      required: [id, name, mode, updatedAt, generationCount]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [single_clip, cinematic_story]
+        updatedAt:
+          type: string
+        generationCount:
+          type: number
+        thumbnailUrl:
+          type: ["string", "null"]
+    ProjectInput:
+      type: object
+      required: [name, mode]
+      properties:
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [single_clip, cinematic_story]
+    Character:
+      type: object
+      required: [id, name, handle, imageUrl, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        handle:
+          type: string
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+    CharacterInput:
+      type: object
+      required: [name, handle, imageUrl]
+      properties:
+        name:
+          type: string
+        handle:
+          type: string
+        imageUrl:
+          type: string
+    Generation:
+      type: object
+      required: [id, type, prompt, status, progress, creditsUsed, createdAt, expiresAt]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [video, image, audio]
+        prompt:
+          type: string
+        status:
+          type: string
+          enum: [queued, generating, complete, cancelled, failed]
+        progress:
+          type: number
+        creditsUsed:
+          type: number
+        aspectRatio:
+          type: string
+        quality:
+          type: string
+        duration:
+          type: ["number", "null"]
+        previewUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        expiresAt:
+          type: string
+    GenerationInput:
+      type: object
+      required: [type, prompt]
+      properties:
+        type:
+          type: string
+          enum: [video, image, audio]
+        prompt:
+          type: string
+        projectId:
+          type: ["string", "null"]
+        characterId:
+          type: ["string", "null"]
+        aspectRatio:
+          type: string
+        quality:
+          type: string
+        duration:
+          type: number
 
